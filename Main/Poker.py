@@ -3,7 +3,7 @@ import logging
 from random import shuffle, choice
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, User
 from telegram.ext import (ContextTypes, JobQueue, filters,
-    CallbackQueryHandler, ConversationHandler, CommandHandler, MessageHandler)
+                          CallbackQueryHandler, ConversationHandler, CommandHandler, MessageHandler)
 from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime, timezone
@@ -21,19 +21,7 @@ class GameState(Enum):
     TURN = 2
     RIVER = 3
     SHOWDOWN = 4
-    def next(state):
-        states = list(GameState)
 
-        try:
-            index = states.index(state)
-        except ValueError:
-            raise ValueError(f"Invalid current state: {state}")
-
-        if index == len(states) - 1:
-            return state
-
-        # Возвращаем следующее состояние
-        return states[index + 1]
 
 # Константы для ConversationHandler
 POKER_START, POKER_JOIN, POKER_PLAY = range(3)
@@ -126,10 +114,14 @@ class PokerGame:
         return True
 
     def next_deal(self, context):
-        if self.state == GameState.RIVER: self.showdown(context)
-        elif self.state == GameState.TURN: self.deal_river()
-        elif self.state == GameState.FLOP: self.deal_turn()
-        elif self.state == GameState.PREFLOP: self.deal_flop()
+        if self.state == GameState.RIVER:
+            self.showdown(context)
+        elif self.state == GameState.TURN:
+            self.deal_river()
+        elif self.state == GameState.FLOP:
+            self.deal_turn()
+        elif self.state == GameState.PREFLOP:
+            self.deal_flop()
 
     def deal_flop(self):
         if self.state != GameState.PREFLOP:
@@ -171,17 +163,17 @@ class PokerGame:
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton('Фолд', callback_data='poker_fold')],
                                          [InlineKeyboardButton('Рейз', callback_data='poker_raise')]])
         msg = await context.bot.send_message(self.chat_id,
-                                       f"<b>Раскрытие карт!</b> \n"
-                                       f"У игроков остается лишь 15 секунд, чтобы сдаться, или поднять ставки "
-                                       f"еще выше!",
-                                       parse_mode="HTML", reply_markup=keyboard)
+                                             f"<b>Раскрытие карт!</b> \n"
+                                             f"У игроков остается лишь 15 секунд, чтобы сдаться, или поднять ставки "
+                                             f"еще выше!",
+                                             parse_mode="HTML", reply_markup=keyboard)
         await asyncio.sleep(1)
         for i in range(14, 0, -1):
             await context.bot.edit_message_text(chat_id=self.chat_id, message_id=msg.id,
                                                 text=f"<b>Раскрытие карт!</b> \n"
-                                       f"У игроков остается лишь {i} секунд, чтобы сдаться, или поднять ставки "
-                                       f"еще выше!",
-                                       parse_mode="HTML", reply_markup=keyboard)
+                                                     f"У игроков остается лишь {i} секунд, чтобы сдаться, или поднять ставки "
+                                                     f"еще выше!",
+                                                parse_mode="HTML", reply_markup=keyboard)
             await asyncio.sleep(1)
 
         await context.bot.send_message(self.chat_id,
@@ -190,10 +182,10 @@ class PokerGame:
         for player_id, player in enumerate(self.active_players):
             cards_list = [str(card) for card in list(game.player_cards[player])]
             await context.bot.send_message(self.chat_id,
-                                       f"Карты открывает @{self.active_players[player_id]}!\n"
-                                       f"Его карты:\n"
-                                       f"{'\n'.join(cards_list)}",
-                                       parse_mode="HTML")
+                                           f"Карты открывает @{self.active_players[player_id]}!\n"
+                                           f"Его карты:\n"
+                                           f"{'\n'.join(cards_list)}",
+                                           parse_mode="HTML")
             value = await evaluate_hand(player)
             self.winner_cards_combinations_values.append(value)
             self.active_players.remove(player)
@@ -288,7 +280,7 @@ class PokerGame:
                         chat_id=chat_id,
                         message_id=self.current_message.id,
                         text=
-                            "❌ Недостаточно средств для колла, можете пойти ва-банк.", reply_markup=keyboard)
+                        "❌ Недостаточно средств для колла, можете пойти ва-банк.", reply_markup=keyboard)
                     return False
                 self.player_bets[user] = self.current_bet
                 self.pot += amount
@@ -340,8 +332,8 @@ class PokerGame:
                         chat_id=chat_id,
                         message_id=self.current_message.id,
                         text=
-                            '❌ Недостаточно средств для повышения ставки. Можете пойти ва-банк или уменьшить сумму.'
-                            '\u200B',
+                        '❌ Недостаточно средств для повышения ставки. Можете пойти ва-банк или уменьшить сумму.'
+                        '\u200B',
                         reply_markup=keyboard)
                     return False
                 if total == balance:
@@ -349,8 +341,8 @@ class PokerGame:
                         chat_id=chat_id,
                         message_id=self.current_message.id,
                         text=
-                            "❌ Нельза поставить сумму, равную балансу. Можете пойти ва-банк или уменьшить сумму."
-                            "\u200B",
+                        "❌ Нельза поставить сумму, равную балансу. Можете пойти ва-банк или уменьшить сумму."
+                        "\u200B",
                         reply_markup=keyboard)
                     return False
                 self.player_bets[user] += total
@@ -360,15 +352,15 @@ class PokerGame:
                 await add_balance(-total, user)
                 # await context.bot.send_message(chat_id, f"⚖️ @{user.username} поднял ставку до {self.current_bet}!")
                 await context.bot.edit_message_text(chat_id=chat_id, message_id=self.current_message.id,
-                    text=f"⚖️ @{user.username} поднял ставку до {self.current_bet}!")
+                                                    text=f"⚖️ @{user.username} поднял ставку до {self.current_bet}!")
                 return True
 
                 # if total == balance:
-                    # self.all_in_players.append(user)
-                    # self.active_players.remove(user)
-                    # + создание сайд пота для тех, кто продолжит игру...
-                    # (all_in player может получить только те деньги, которые были в pot-e на момент его рейза,
-                    #                                                                           ставшего Ва-банком)
+                # self.all_in_players.append(user)
+                # self.active_players.remove(user)
+                # + создание сайд пота для тех, кто продолжит игру...
+                # (all_in player может получить только те деньги, которые были в pot-e на момент его рейза,
+                #                                                                           ставшего Ва-банком)
 
             if action == "ALLIN":
                 all_in_amount = balance
@@ -553,7 +545,6 @@ async def show_player_turn(context, game):
         return ConversationHandler.END
 
 
-
 async def get_keyboard(game):
     if game.state == GameState.PREFLOP and game.player_bets:
         if game.player_bets[game.current_player] >= game.current_bet:
@@ -666,20 +657,20 @@ async def handle_poker_action(update, context):
         elif action == "raise":
             msg = context.chat_data.get("current_reply_msg")
             if msg: await context.bot.delete_message(
-                    chat_id=game.chat_id,
-                    message_id=msg.id)
+                chat_id=game.chat_id,
+                message_id=msg.id)
             msg = await context.bot.send_message(
                 chat_id=game.chat_id,
                 text=f"@{user.username}, введите сумму, до которой хотите поднять ставку (Только число!) "
                      f"ответом на это сообщение.")
             context.chat_data["current_reply_msg"] = msg
             context.user_data['pending_action'] = 'RAISE'
-        
+
         elif action == "allin":
             await game.player_action(user, "ALLIN", context, chat_id)
             await next_turn(context, game, chat_id)
             context.user_data['pending_action'] = 'ALLIN'
-# ...
+    # ...
 
     except Exception as e:
         logger.exception(e)
@@ -753,11 +744,11 @@ async def next_turn(context, game, chatid=None):
         if len(game.street_players) <= 0 and context.chat_data.get("pending_action") != 'RAISE' and \
                 game.state != GameState.RIVER:
             if game.state == GameState.PREFLOP: await context.bot.send_message(game.chat_id,
-                text=f"Первая улица прошла, переходим на Флоп!")
+                                                                               text=f"Первая улица прошла, переходим на Флоп!")
             if game.state == GameState.FLOP: await context.bot.send_message(game.chat_id,
-                text=f"Вторая улица прошла, переходим на Тёрн!")
+                                                                            text=f"Вторая улица прошла, переходим на Тёрн!")
             if game.state == GameState.TURN: await context.bot.send_message(game.chat_id,
-                text=f"Третья улица прошла, переходим на Ривер!")
+                                                                            text=f"Третья улица прошла, переходим на Ривер!")
             game.next_deal(context)
             game.current_player = game.active_players[0]
             game.street_players = game.players.copy()
